@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "academic-writing-suite",
+  "owner": {
+    "name": "Академический конвейер (academic-writing-suite)"
+  },
+  "plugins": [
+    {
+      "name": "academic-writing-suite",
+      "source": "./",
+      "description": "Оркестратор написания разделов ВКР по СЦБ: research, calc, draft (в идиолекте автора), humanizer, norm-control, style-calibrator субагенты."
+    }
+  ]
+}
