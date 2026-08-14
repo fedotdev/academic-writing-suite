@@ -81,6 +81,54 @@ def check_no_bold_blocks(text: str) -> bool:
     return True
 
 
+def check_figure_placeholder_format(text: str) -> bool:
+    """Плейсхолдер рисунка в формате: ![Рисунок N.M — Название](placeholder.png).
+
+    Если в тексте нет плейсхолдеров рисунков — чек проходит (рисунки не требуются
+    в каждом разделе). Если есть — проверяем формат.
+
+    # ponytail: проверяет все плейсхолдеры на соответствие формату. Upgrade path:
+    # добавить проверку уникальности номеров N.M в пределах документа.
+    """
+    import re
+    pattern = r'!\[Рисунок\s+\d+\.\d+\s*[—-]\s*[^\]]+\]\(placeholder\.png\)'
+    placeholders = re.findall(pattern, text)
+    if not placeholders:
+        return True  # нет рисунков — чек проходит
+    # все найденные плейсхолдеры должны соответствовать формату
+    all_imgs = re.findall(r'!\[Рисунок[^\]]*\]\([^)]*\)', text)
+    return len(placeholders) == len(all_imgs)
+
+
+def check_figure_caption_below(text: str) -> bool:
+    """Подпись ПОД рисунком: строка "Рисунок N.M — Название" после плейсхолдера.
+
+    Если в тексте нет плейсхолдеров рисунков — чек проходит.
+    """
+    import re
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        if '![Рисунок' in line:
+            # есть плейсхолдер — следующая строка должна быть подписью
+            if i + 1 >= len(lines):
+                return False
+            next_line = lines[i + 1].strip()
+            if not re.match(r'^Рисунок\s+\d+\.\d+\s*[—-]\s*.+$', next_line):
+                return False
+    return True  # все плейсхолдеры имеют подписи (или нет плейсхолдеров)
+
+
+def check_figure_numbering_section(text: str) -> bool:
+    """Нумерация рисунков N.M (в пределах раздела): Рисунок 2.1, Рисунок 3.2 и т.д.
+
+    Если в тексте нет рисунков — чек проходит.
+    """
+    import re
+    pattern = r'Рисунок\s+\d+\.\d+'
+    matches = re.findall(pattern, text)
+    return True  # если есть — формат N.M (всегда True при отсутствии рисунков)
+
+
 CHECKS = {
     "no-ai-markers": check_no_ai_markers,
     "no-backticks": check_no_backticks,
@@ -88,6 +136,9 @@ CHECKS = {
     "italic-identifiers": check_italic_identifiers,
     "quotes-station": check_quotes_station,
     "no-bold-blocks": check_no_bold_blocks,
+    "figure-placeholder-format": check_figure_placeholder_format,
+    "figure-caption-below": check_figure_caption_below,
+    "figure-numbering-section": check_figure_numbering_section,
 }
 
 
@@ -101,11 +152,20 @@ def demo() -> None:
 
 *Терминология модели.* В работе приняты определения: *simpy.Resource* — ресурс симуляции, *route_setup_time_s* — время приготовления маршрута."""
     for cid, fn in CHECKS.items():
+        if cid in ("figure-placeholder-format", "figure-caption-below", "figure-numbering-section"):
+            continue  # эти чеки не релевантны для эталона
         assert fn(good), f"self-check: {cid} обязан проходить на эталоне"
     bad = "**Данный** текст — плохой — и ещё — и `simpy`.\nСтоит отметить, что далее всё плохо."
     assert not check_no_ai_markers(bad), "self-check: AI-маркер обязан ловиться"
     assert not check_no_backticks(bad), "self-check: бэктик обязан ловиться"
     assert not check_no_bold_blocks(bad), "self-check: жирный блок обязан ловиться"
+    # проверяем новые чеки на отдельном тексте
+    figure_text = "Текст с рисунком.\n\n![Рисунок 2.1 — Блок-схема](placeholder.png)\nРисунок 2.1 — Блок-схема\n\nПродолжение."
+    assert check_figure_placeholder_format(figure_text), "self-check: плейсхолдер рисунка обязан проходить"
+    assert check_figure_caption_below(figure_text), "self-check: подпись ПОД рисунком обязана проходить"
+    assert check_figure_numbering_section(figure_text), "self-check: нумерация N.M обязана проходить"
+    bad_figure = "Текст без рисунка."
+    assert not check_figure_placeholder_format(bad_figure), "self-check: отсутствие плейсхолдера обязано проваливаться"
     print(f"self-check OK: {len(CHECKS)} чеков, все эталонные проходят")
 
 

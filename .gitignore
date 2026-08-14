@@ -29,3 +29,6 @@ Desktop.ini
 # Личные данные калибровки (черновики ВКР, правки автора, edit-log)
 calibration/
 style-calibration/
+
+# Заметки разработки (спеки, план, Notion-экспорты)
+.agents/development/
