@@ -10,6 +10,11 @@
 субагенту; один `install.sh` ставит suite в 15 инструментов (Claude Code,
 OpenCode, Cursor, Copilot и др.).
 
+> [!NOTE]
+> **Основной продукт — агент** (папка `academic-writing-suite/`). Всё остальное
+> в репозитории — личные рабочие данные автора (калибровка стиля): они
+> исключены из git и не публикуются. Рядовому пользователю они не нужны.
+
 ## Возможности
 
 - **Оркестратор** — декомпозирует запрос и вызывает профильных субагентов,
@@ -21,15 +26,45 @@ OpenCode, Cursor, Copilot и др.).
 - **Факт-замок** — числа, даты, имена, номера ГОСТов и проценты переносятся из
   источников без искажений на каждом шаге; нет данных → маркер пробела, а не
   правдоподобная выдумка.
-- **Идиолект автора** — `assets/user-idiolect.md` с правилами частотой ≥ 3/7 и
-  калибровочный цикл: черновик → правка автора → style-calibrator → новые
-  правила для draft-agent.
+- **Идиолект автора** — `academic-writing-suite/assets/user-idiolect.md` с
+  правилами частотой ≥ 3/7 и калибровочный цикл: черновик → правка автора →
+  style-calibrator → новые правила для draft-agent.
 - **Детерминированные evals** — 7 command-чеков (AI-маркеры, бэктики,
   риторические вопросы, кавычки-ёлочки и др.) + 2 LLM-judge-чека с канарейкой,
   5 golden cases. Всё гоняется stdlib-скриптом без внешних зависимостей.
 - **Кроссплатформенная установка** — один установщик для Claude Code, OpenCode,
   Copilot, Cursor, Windsurf, Cline, Codex, Gemini, Kiro, Trae, Goose, Roo Code,
   Kilo Code, Factory, Junie, Antigravity.
+
+## Структура репозитория
+
+```
+akadem-text_agent/
+├── README.md                    # этот файл
+├── .gitignore                   # исключает calibration/ и style-calibration/ (личное)
+├── academic-writing-suite/      # ОСНОВНОЙ ПРОДУКТ — агент (публикуется)
+│   ├── SKILL.md                 # оркестратор: маршрутизация, протокол делегирования
+│   ├── AGENTS.md                # краткое описание для агентов
+│   ├── install.sh               # кроссплатформенный установщик (15 инструментов)
+│   ├── skills/                  # 6 субагентов, по SKILL.md на каждого
+│   │   ├── research-agent/
+│   │   ├── calc-agent/
+│   │   ├── draft-agent/
+│   │   ├── humanizer-agent/
+│   │   ├── norm-control-agent/
+│   │   └── style-calibrator-agent/
+│   ├── shared/                  # инструменты субагентов (stdlib, без зависимостей)
+│   │   ├── diff_texts.py        # дифф по предложениям
+│   │   ├── rhythm_metrics.py    # доля эм-дешей, ритм, AI-маркеры
+│   │   └── eval_checks.py       # детерминированные чек-функции для evals
+│   ├── assets/                  # user-idiolect.md (seed), candidates.md
+│   ├── evals/                   # спецификация evals + 5 golden cases
+│   ├── references/              # справочные материалы (idiolect-guide.md и др.)
+│   ├── scripts/                 # обслуживание: run_evals.py, evolve.py, staleness...
+│   └── .claude-plugin/          # метаданные для Claude Code marketplace
+├── calibration/                 # личные данные автора (gitignored, не публикуется)
+└── style-calibration/           # рабочая копия идиолекта (gitignored, не публикуется)
+```
 
 ## Как это работает
 
@@ -99,11 +134,11 @@ OpenCode, Cursor, Copilot и др.).
 ### Остальные платформы (универсальный установщик)
 
 ```bash
-./install.sh                # автоопределение платформы, user-level
-./install.sh --project      # project-level (текущая директория)
-./install.sh --platform opencode --path ~/.config/opencode/skills/
-./install.sh --all          # установить во все обнаруженные инструменты
-./install.sh --dry-run      # предпросмотр без изменений
+./academic-writing-suite/install.sh                # автоопределение платформы, user-level
+./academic-writing-suite/install.sh --project      # project-level (текущая директория)
+./academic-writing-suite/install.sh --platform opencode --path ~/.config/opencode/skills/
+./academic-writing-suite/install.sh --all          # установить во все обнаруженные инструменты
+./academic-writing-suite/install.sh --dry-run      # предпросмотр без изменений
 ```
 
 ### Вручную
@@ -116,8 +151,8 @@ OpenCode, Cursor, Copilot и др.).
 | Gemini CLI | `~/.gemini/skills/academic-writing-suite/` |
 | Cursor (адаптация `.mdc`) | `~/.cursor/rules/academic-writing-suite.mdc` |
 
-Скопируйте содержимое пакета (SKILL.md, AGENTS.md, skills/, shared/, assets/,
-references/, evals/, .claude-plugin/) в выбранный путь.
+Скопируйте содержимое `academic-writing-suite/` (SKILL.md, AGENTS.md, skills/,
+shared/, assets/, references/, evals/, .claude-plugin/) в выбранный путь.
 
 ## Использование
 
@@ -134,7 +169,11 @@ references/, evals/, .claude-plugin/) в выбранный путь.
 > форматов между шагами (например, calc-agent вернёт цифру без единиц
 > измерения) ломает следующий шаг.
 
-## Калибровка идиолекта
+## Калибровка идиолекта (для автора)
+
+Функция только для владельца репозитория: агент учится на ручных правках
+автора. Рядовому пользователю этот цикл не нужен — достаточно seed-правил из
+`academic-writing-suite/assets/user-idiolect.md`.
 
 1. draft-agent пишет черновик, автор вручную правит текст.
 2. Автор запускает «сравни черновик и мою правку» — style-calibrator-agent
@@ -142,34 +181,12 @@ references/, evals/, .claude-plugin/) в выбранный путь.
 3. Правила, повторившиеся ≥ 3 раз из 7 проверок, попадают в
    `assets/user-idiolect.md` и становятся обязательными для draft-agent.
 
-## Структура проекта
-
-```
-academic-writing-suite/
-├── SKILL.md                  # оркестратор: маршрутизация, протокол делегирования
-├── AGENTS.md                 # краткое описание для агентов
-├── install.sh                # кроссплатформенный установщик (15 инструментов)
-├── skills/                   # 6 субагентов, по SKILL.md на каждого
-│   ├── research-agent/
-│   ├── calc-agent/
-│   ├── draft-agent/
-│   ├── humanizer-agent/
-│   ├── norm-control-agent/
-│   └── style-calibrator-agent/
-├── shared/                   # инструменты субагентов (stdlib, без зависимостей)
-│   ├── diff_texts.py         # дифф по предложениям
-│   ├── rhythm_metrics.py     # доля эм-дешей, ритм, AI-маркеры
-│   └── eval_checks.py        # детерминированные чек-функции для evals
-├── assets/                   # user-idiolect.md (подтверждённые правила), candidates.md
-├── evals/                    # спецификация evals + 5 golden cases
-├── references/               # справочные материалы (idiolect-guide.md и др.)
-├── scripts/                  # обслуживание: run_evals.py, evolve.py, staleness...
-└── .claude-plugin/           # метаданные для Claude Code marketplace
-```
+Рабочие данные цикла живут в `style-calibration/` (edit-log, отчёты, рабочая
+копия идиолекта) — они gitignored.
 
 ## Тестирование и обслуживание
 
-Из корня suite:
+Из папки `academic-writing-suite/`:
 
 ```bash
 python3 scripts/run_evals.py --validate        # проверить спецификацию (должна быть VALID)
