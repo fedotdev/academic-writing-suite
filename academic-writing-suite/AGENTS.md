@@ -41,9 +41,11 @@ The suite routes to component skills under `skills/`:
 - Полный документ: последовательный конвейер по всем разделам без «продолжай»,
   результат в `outputs/`. После сборки — `article-polish-agent` (read-only)
   проверяет межразделовую согласованность. После подтверждения MD — экспорт в
-  DOCX через pandoc с шаблоном `references/Normal_GOST-7-32-2017.dotm` (`--reference-doc`).
-- Рисунки: плейсхолдер двумя строками (markdown-image + подпись ПОД рисунком),
-  лог в `assets/figures-todo.md`.
+  DOCX через pandoc с шаблоном `references/Normal_GOST-7-32-2017.dotm` (`--reference-doc`),
+  затем `scripts/document_style_validator.py` проверяет контракты (заголовки, подписи,
+  формулы, список источников).
+- Рисунки: плейсхолдер одной строкой с пустым alt (`![](placeholder.png)`), подпись
+  в div `::: {custom-style="caption"}` под рисунком, лог в `assets/figures-todo.md`.
 
 ## Gotchas
 

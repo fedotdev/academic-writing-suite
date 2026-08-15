@@ -237,12 +237,11 @@
 │                       ЭКСПОРТ В DOCX (pandoc)                               │
 │                                                                             │
 │  pandoc outputs/thesis.md \                                                  │
-│    -f markdown-implicit_figures \                                           │
 │    -o outputs/thesis.docx \                                                  │
-│    --reference-doc="references/Normal_GOST-7-32-2017.dotm" \                │
-│    --number-sections                                                        │
+│    --reference-doc="references/Normal_GOST-7-32-2017.dotm"                   │
 │                                                                             │
 │  python references/fix_table.py outputs/thesis.docx  # таблицы во всю ширину │
+│  python scripts/document_style_validator.py outputs/thesis.docx              │
 │                                                                             │
 └──────────────────────────────────┬──────────────────────────────────────────┘
                                    │
