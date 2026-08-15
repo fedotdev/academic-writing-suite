@@ -1,7 +1,7 @@
 {
   "name": "academic-writing-suite",
   "version": "1.0.0",
-  "description": "Оркестратор написания разделов ВКР по СЦБ: research, calc, draft (в идиолекте автора), humanizer, norm-control, style-calibrator субагенты.",
+  "description": "Оркестратор написания ВКР/статей по СЦБ: doc-planner, research, calc, draft (в идиолекте автора), logic-reviewer, humanizer, norm-control, article-polish, style-calibrator субагенты.",
   "author": {
     "name": "Академический конвейер (academic-writing-suite)"
   }

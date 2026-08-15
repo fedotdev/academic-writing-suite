@@ -6,6 +6,7 @@ description: >-
   умолчанию), Audit (список AI-маркеров с цитатами без переписывания — бывший
   reviewer-agent), Targeted edit (только указанная категория). Триггеры:
   «очеловечь», «убери AI-маркеры», «проверь на AI-маркеры» (→ режим audit).
+allowed-tools: [Read, Grep, Write]
 license: MIT
 metadata:
   author: Академический конвейер (academic-writing-suite)

@@ -5,6 +5,7 @@ description: >-
   research-agent и calc-agent, в подтверждённом идиолекте автора
   (assets/user-idiolect.md) с иерархией приоритета правил. Триггеры: «напиши
   раздел N.M», «дополни раздел», «черновик раздела».
+allowed-tools: [Read, Grep, Write]
 license: MIT
 metadata:
   author: Академический конвейер (academic-writing-suite)

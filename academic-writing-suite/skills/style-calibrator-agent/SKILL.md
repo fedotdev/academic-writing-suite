@@ -6,6 +6,7 @@ description: >-
   подтверждения 3+ (≥3 вхождений → user-idiolect.md, 1–2 → candidates.md),
   версионирование правил (частота, дата, ревизия). Триггеры: «сравни черновик
   и мою правку», «вот что я исправил», «обучи агента на моих правках».
+allowed-tools: [Read, Grep, Write]
 license: MIT
 metadata:
   author: Академический конвейер (academic-writing-suite)

@@ -32,3 +32,6 @@ style-calibration/
 
 # Заметки разработки (спеки, план, Notion-экспорты)
 .agents/development/
+
+# Результаты генерации (главы, ВКР, артефакты)
+outputs/

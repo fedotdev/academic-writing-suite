@@ -23,8 +23,10 @@ The suite routes to component skills under `skills/`:
 - **research-agent** — «собери материал по разделу», «найди данные»
 - **calc-agent** — «рассчитай/пересчитай X», «проверь цифру X»
 - **draft-agent** — «напиши раздел N.M» (после research/calc)
+- **logic-reviewer-agent** — логическая проверка подраздела (после draft, до humanizer)
 - **humanizer-agent** — «очеловечь», «убери AI-маркеры», «проверь на AI-маркеры» (→ audit)
 - **norm-control-agent** — «проверь раздел перед сдачей»
+- **article-polish-agent** — межразделовая согласованность (после сборки полного документа)
 - **style-calibrator-agent** — «сравни черновик и мою правку», «обучи агента на моих правках»
 
 ## Key Rules
@@ -37,8 +39,9 @@ The suite routes to component skills under `skills/`:
 - Промпт делегирования самодостаточен: дословный заголовок, пути файлов, полный
   вывод предыдущего субагента.
 - Полный документ: последовательный конвейер по всем разделам без «продолжай»,
-  результат в `output/`. После подтверждения MD — экспорт в DOCX через pandoc
-  с шаблоном `references/Normal_GOST-7-32-2017.dotm` (`--reference-doc`).
+  результат в `outputs/`. После сборки — `article-polish-agent` (read-only)
+  проверяет межразделовую согласованность. После подтверждения MD — экспорт в
+  DOCX через pandoc с шаблоном `references/Normal_GOST-7-32-2017.dotm` (`--reference-doc`).
 - Рисунки: плейсхолдер двумя строками (markdown-image + подпись ПОД рисунком),
   лог в `assets/figures-todo.md`.
 

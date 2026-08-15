@@ -17,7 +17,7 @@
 изображения:
 
 1. Нарисуй/найди изображение согласно колонке «Что нарисовать».
-2. Замени строку `![Рисунок 2.1 — ...](E:/akadem-text_agent/academic-writing-suite/references/placeholder.png)` в `output/chapters/2.1.md`
+2. Замени строку `![Рисунок 2.1 — ...](E:/akadem-text_agent/academic-writing-suite/references/placeholder.png)` в `outputs/chapters/2.1.md`
    на `![Рисунок 2.1 — ...](images/figure-2.1.png)`.
 3. Убедись, что файл `images/figure-2.1.png` существует.
 
