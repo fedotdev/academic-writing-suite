@@ -93,7 +93,7 @@ Run `python3 shared/rhythm_metrics.py <text-file>` — вернёт число �
 ## Защита плейсхолдеров рисунков/таблиц
 
 **Не трогай** строки вида:
-- `![Рисунок N.M — …](placeholder.png)`
+- `![Рисунок N.M — …](E:/akadem-text_agent/academic-writing-suite/references/placeholder.png)`
 - `Рисунок N.M — …`
 - `Таблица N.M — …`
 

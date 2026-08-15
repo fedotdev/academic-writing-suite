@@ -82,7 +82,7 @@ def check_no_bold_blocks(text: str) -> bool:
 
 
 def check_figure_placeholder_format(text: str) -> bool:
-    """Плейсхолдер рисунка в формате: ![Рисунок N.M — Название](placeholder.png).
+    """Плейсхолдер рисунка в формате: ![Рисунок N.M — Название](E:/akadem-text_agent/academic-writing-suite/references/placeholder.png).
 
     Если в тексте нет плейсхолдеров рисунков — чек проходит (рисунки не требуются
     в каждом разделе). Если есть — проверяем формат.
@@ -91,7 +91,7 @@ def check_figure_placeholder_format(text: str) -> bool:
     # добавить проверку уникальности номеров N.M в пределах документа.
     """
     import re
-    pattern = r'!\[Рисунок\s+\d+\.\d+\s*[—-]\s*[^\]]+\]\(placeholder\.png\)'
+    pattern = r'!\[Рисунок\s+\d+\.\d+\s*[—-]\s*[^\]]+\]\(E:/akadem-text_agent/academic-writing-suite/references/placeholder\.png\)'
     placeholders = re.findall(pattern, text)
     if not placeholders:
         return True  # нет рисунков — чек проходит
@@ -160,12 +160,16 @@ def demo() -> None:
     assert not check_no_backticks(bad), "self-check: бэктик обязан ловиться"
     assert not check_no_bold_blocks(bad), "self-check: жирный блок обязан ловиться"
     # проверяем новые чеки на отдельном тексте
-    figure_text = "Текст с рисунком.\n\n![Рисунок 2.1 — Блок-схема](placeholder.png)\nРисунок 2.1 — Блок-схема\n\nПродолжение."
+    figure_text = "Текст с рисунком.\n\n![Рисунок 2.1 — Блок-схема](E:/akadem-text_agent/academic-writing-suite/references/placeholder.png)\nРисунок 2.1 — Блок-схема\n\nПродолжение."
     assert check_figure_placeholder_format(figure_text), "self-check: плейсхолдер рисунка обязан проходить"
     assert check_figure_caption_below(figure_text), "self-check: подпись ПОД рисунком обязана проходить"
     assert check_figure_numbering_section(figure_text), "self-check: нумерация N.M обязана проходить"
     bad_figure = "Текст без рисунка."
-    assert not check_figure_placeholder_format(bad_figure), "self-check: отсутствие плейсхолдера обязано проваливаться"
+    assert check_figure_placeholder_format(bad_figure), "self-check: отсутствие плейсхолдеров обязано проходить"
+    wrong_path_figure = ("![Рисунок 2.1 — Блок-схема]"
+                         "(E:/akadem-text_agent/academic-writing-suite/references/placeholder.png)\n"
+                         "![Рисунок 2.2 — Чужой рисунок](images/figure-2.2.png)")
+    assert not check_figure_placeholder_format(wrong_path_figure), "self-check: плейсхолдер с чужим путём обязан проваливаться"
     print(f"self-check OK: {len(CHECKS)} чеков, все эталонные проходят")
 
 
