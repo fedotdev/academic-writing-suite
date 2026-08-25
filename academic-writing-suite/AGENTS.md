@@ -36,16 +36,26 @@ The suite routes to component skills under `skills/`:
   humanizer → общие стилевые правила Projects.
 - humanizer-agent — финальная инстанция по стилю; norm-control-agent только
   помечает (ссылки, термины, ГОСТ 7.32-2017), не переписывает.
-- Промпт делегирования самодостаточен: дословный заголовок, пути файлов, полный
-  вывод предыдущего субагента.
+- Промпт делегирования самодостаточен: дословный заголовок, пути файлов. Для
+  передачи контента используется artifact-first: субагент сохраняет результат
+  как файл в `outputs/<document_id>/` ДО ответа и возвращает только JSON-конверт
+  `{status, artifact_path, checksum, idempotency_key, flags}`; кодагенты читают
+  артефакты по путям, а не получают полный текст в промпте. Повтор шага с тем же
+  idempotency key не создаёт второй артефакт.
+- Артефакты и состояние: `manifest.json`, `state.json`, `index.json`,
+  `events.jsonl`, `token-ledger.jsonl` в `outputs/<document_id>/` (создаёт
+  `scripts/init_run.py`). Скрипты: `artifact_store.py` (checksum, атомарная
+  запись, index), `state_manager.py` (idempotency key, статусные переходы).
+  Проверка: `python3 scripts/test_v3.py` (selfchecks + контракты SKILL.md).
 - Полный документ: последовательный конвейер по всем разделам без «продолжай»,
-  результат в `outputs/`. После сборки — `article-polish-agent` (read-only)
+  результат в `outputs/<document_id>/`. После сборки — `article-polish-agent` (read-only)
   проверяет межразделовую согласованность. После подтверждения MD — экспорт в
   DOCX через pandoc с шаблоном `references/Normal_GOST-7-32-2017.dotm` (`--reference-doc`),
   затем `scripts/document_style_validator.py` проверяет контракты (заголовки, подписи,
   формулы, список источников).
 - Рисунки: плейсхолдер одной строкой с пустым alt (`![](placeholder.png)`), подпись
-  в div `::: {custom-style="caption"}` под рисунком, лог в `assets/figures-todo.md`.
+  в div `::: {custom-style="caption"}` под рисунком, лог в
+  `outputs/<document_id>/figures-todo.md` (путь из промпта).
 
 ## Gotchas
 

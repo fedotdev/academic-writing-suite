@@ -9,6 +9,7 @@ tools:
   read: true
   grep: true
   glob: true
+  write: true
 ---
 
 # logic-reviewer-agent
@@ -55,6 +56,15 @@ article-polish. Истину утверждений — только внутр�
 
 Максимум 10 находок; если больше — 10 самых критичных + пометка
 «есть дополнительные несоответствия».
+
+## Артефакт (artifact-first)
+
+Read-only по отношению к документу, но свой отчёт сохраняешь в
+`reviews/<section_id>.logic.json` (путь из промпта):
+`{section_id, verdict:"ok|findings", findings:[{id,locus,quote,problem,recommendation}], max_reached}`.
+Пиши через `scripts/artifact_store.py --save <path> --kind review --section-id <id> --index index.json --agent logic-reviewer-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
+Нет находок → `verdict:"ok"` пустой findings.
 
 ## Gotchas
 

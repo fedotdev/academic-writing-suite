@@ -215,6 +215,29 @@ def check_docx(docx_path: Path, manifest_path: Optional[Path] = None) -> list[Vi
                     )
                 )
 
+    # === CHECK 4b: Structural elements — АННОТАЦИЯ/ВВЕДЕНИЕ/ЗАКЛЮЧЕНИЕ/СПИСОК... must be style 7322 ===
+    # (v1.5.5: fenced div не распознавался pandoc без пустых строк вокруг «:::»,
+    # элементы падали в Normal/Body Text вместо «Структурный элемент обязательный 7.32»)
+    STRUCTURAL_ELEMENTS = {
+        "АННОТАЦИЯ",
+        "ВВЕДЕНИЕ",
+        "ЗАКЛЮЧЕНИЕ",
+        "СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ",
+        "СОДЕРЖАНИЕ",
+    }
+    STRUCTURAL_STYLE_ID = "7322"
+    for i, para in enumerate(paragraphs):
+        t = para["text"].strip()
+        if t in STRUCTURAL_ELEMENTS and para["sid"] != STRUCTURAL_STYLE_ID:
+            violations.append(
+                Violation(
+                    "structural-element-wrong-style",
+                    "error",
+                    f"Структурный элемент '{t}' has style '{para['sid']}' (expected '{STRUCTURAL_STYLE_ID}')",
+                    f"para {i}",
+                )
+            )
+
     # === CHECK 5: References — all paragraphs after "СПИСОК..." must have style aa ===
     in_references = False
     for i, para in enumerate(paragraphs):
@@ -327,6 +350,33 @@ def check_markdown(md_path: Path) -> list[Violation]:
                         )
                     )
 
+    # Check bare ordered lists outside numbered-list divs
+    # (v1.5.4: «Повышение пропускной способности…» и «интервал приёма…» должны
+    # быть в стилях «Нумерованный список без точки» / «Нумерованный одноуровневый
+    # список»; голые «N.»/«N)» в markdown попадали в Normal, а не в список.)
+    ORDERED_ITEM = re.compile(r"^\s*\d+[.)]\s+\S")
+    in_list_div = False
+    for i, line in enumerate(lines):
+        if line.startswith("::: {custom-style="):
+            in_list_div = "Нумерованный" in line
+            continue
+        if line == ":::":
+            in_list_div = False
+            continue
+        # пропускаем markdown-заголовки (## и т.п.) и уже-обёрнутые в div
+        if line.startswith("#") or in_list_div:
+            continue
+        if ORDERED_ITEM.match(line):
+            violations.append(
+                Violation(
+                    "md-bare-ordered-list",
+                    "error",
+                    f"Ordered list item outside numbered-list div: '{line.strip()[:60]}' "
+                    "(оберни в «Нумерованный список без точки» или «Нумерованный одноуровневый список»)",
+                    f"line {i+1}",
+                )
+            )
+
     return violations
 
 
@@ -385,11 +435,15 @@ def demo():
 <w:name w:val="\u0423\u0440\u0430\u0432\u043d\u0435\u043d\u0438\u0435"/>
 <w:pPr><w:keepLines w:val="1"/></w:pPr>
 </w:style>
+<w:style w:type="paragraph" w:styleId="7322">
+<w:name w:val="\u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u043d\u044b\u0439 \u044d\u043b\u0435\u043c\u0435\u043d\u0442 \u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u044c\u043d\u044b\u0439 7.32"/>
+</w:style>
 </w:styles>""".encode("utf-8")
 
     # Good docx: heading without literal number
     good_doc_xml = make_docx_xml(
         '<w:p><w:pPr><w:pStyle w:val="1"/></w:pPr><w:t>Эволюция</w:t></w:p>'
+        '<w:p><w:pPr><w:pStyle w:val="7322"/></w:pPr><w:t>ВВЕДЕНИЕ</w:t></w:p>'
     )
     good_styles_xml = make_styles_xml()
 
@@ -406,6 +460,7 @@ def demo():
     # Bad docx: heading with literal number
     bad_doc_xml = make_docx_xml(
         '<w:p><w:pPr><w:pStyle w:val="1"/></w:pPr><w:t>1.1 Эволюция</w:t></w:p>'
+        '<w:p><w:t>ВВЕДЕНИЕ</w:t></w:p>'
     )
     with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp:
         with zipfile.ZipFile(tmp.name, "w") as z:
@@ -413,7 +468,10 @@ def demo():
             z.writestr("word/styles.xml", good_styles_xml)
         v = check_docx(Path(tmp.name))
         assert any("heading-literal-number" in str(x) for x in v), f"Bad docx should fail, got {v}"
-        print(f"[OK] Bad docx (literal number) fails")
+        assert any(
+            "structural-element-wrong-style" in str(x) for x in v
+        ), f"Bad docx should fail on structural element, got {v}"
+        print(f"[OK] Bad docx (literal number + wrong structural style) fails")
         tmp.close()
         Path(tmp.name).unlink()
 
@@ -424,6 +482,28 @@ def demo():
         v = check_markdown(Path(tmp.name))
         assert any("md-heading-literal-number" in str(x) for x in v), f"Bad md should fail, got {v}"
         print(f"[OK] Bad markdown (literal heading number) fails")
+        Path(tmp.name).unlink()
+
+    # Bad markdown: bare ordered list outside div
+    with tempfile.NamedTemporaryFile(suffix=".md", delete=False, mode="w", encoding="utf-8") as tmp:
+        tmp.write("1.  Повышение пропускной способности: сокращение межпоездного\n")
+        tmp.write("2.  Энергоэффективность: следование поездов\n")
+        tmp.close()
+        v = check_markdown(Path(tmp.name))
+        assert any("md-bare-ordered-list" in str(x) for x in v), f"Bare list should fail, got {v}"
+        print(f"[OK] Bad markdown (bare ordered list) fails")
+        Path(tmp.name).unlink()
+
+    # Good markdown: ordered list inside numbered div
+    with tempfile.NamedTemporaryFile(suffix=".md", delete=False, mode="w", encoding="utf-8") as tmp:
+        tmp.write('::: {custom-style="Нумерованный список без точки"}\n')
+        tmp.write("Повышение пропускной способности: сокращение межпоездного\n\n")
+        tmp.write("Энергоэффективность: следование поездов\n")
+        tmp.write(":::\n")
+        tmp.close()
+        v = check_markdown(Path(tmp.name))
+        assert not any("md-bare-ordered-list" in str(x) for x in v), f"Good div list should pass, got {v}"
+        print(f"[OK] Good markdown (list in div) passes")
         Path(tmp.name).unlink()
 
     print("\n[OK] All self-checks passed")

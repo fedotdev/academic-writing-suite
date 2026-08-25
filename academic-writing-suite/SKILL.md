@@ -138,22 +138,23 @@ research-agent или draft-agent, не подменяется синонимо�
 **Один подраздел** — результат последнего шага конвейера (готовый текст раздела,
 список маркеров или отчёт калибратора) возвращается в чат.
 
-**Глава/документ целиком** — результат записывается в файл (по умолчанию
-`outputs/chapters/N.md` для каждого раздела, финальный `outputs/thesis.md`
-склеивает введение + все главы + заключение + список использованных
-источников). После сборки — `article-polish-agent` (read-only) проверяет
-межразделовую согласованность и возвращает список находок оркестратору. В
-чат — только сводка: что написано, что помечено пробелом, список
-рисунков-плейсхолдеров (ссылка на `assets/figures-todo.md`). Путь к файлу
-указывается явно.
+**Глава/документ целиком** — результат записывается в файлы рабочего каталога
+`outputs/<document_id>/`: каждый подраздел — `sections/<section_id>.md`,
+сборка — `final/<document_type>.md` (склеивает введение + все главы + заключение
++ список использованных источников). После сборки — `article-polish-agent`
+(read-only) проверяет межразделовую согласованность и возвращает список находок
+оркестратору. В чат — только сводка: что написано, что помечено пробелом, список
+рисунков-плейсхолдеров (ссылка на `outputs/<document_id>/figures-todo.md`). Путь
+к файлу указывается явно.
 
 Если пользователь подтвердил корректность MD-файла — запускаешь экспорт в DOCX
 через pandoc с использованием шаблона оформления по ГОСТ 7.32-2017:
 
 ```bash
-pandoc outputs/thesis.md -o outputs/thesis.docx --reference-doc="E:\akadem-text_agent\academic-writing-suite\references\Normal_GOST-7-32-2017.dotm"
-python "E:\akadem-text_agent\academic-writing-suite\references\fix_table.py" outputs/thesis.docx
-python "E:\akadem-text_agent\academic-writing-suite\scripts\document_style_validator.py" outputs/thesis.docx
+pandoc outputs/<document_id>/final/<document_type>.md -o outputs/<document_id>/final/<document_type>.docx --reference-doc="E:\akadem-text_agent\academic-writing-suite\references\Normal_GOST-7-32-2017.dotm"
+python "E:\akadem-text_agent\academic-writing-suite\references\fix_table.py" outputs/<document_id>/final/<document_type>.docx
+python "E:\akadem-text_agent\academic-writing-suite\scripts\fix_docx_numbering.py" outputs/<document_id>/final/<document_type>.docx
+python "E:\akadem-text_agent\academic-writing-suite\scripts\document_style_validator.py" outputs/<document_id>/final/<document_type>.docx
 ```
 
 - **Без** `-f markdown-implicit_figures` и **без** `--number-sections`: нумерация
@@ -162,14 +163,22 @@ python "E:\akadem-text_agent\academic-writing-suite\scripts\document_style_valid
 - `fix_table.py` — пост-процесс: таблицы на всю ширину текста + по центру
   (pandoc ставит `tblW=auto`, который уже не меняется стилем — нужен
   пост-процесс) и пустой абзац (Enter) после подписи каждого рисунка.
+- `fix_docx_numbering.py` — пост-процесс (v1.5.6): рестарт нумерации
+  div-списков «Нумерованный одноуровневый список»/«Нумерованный список без
+  точки» — каждой непрерывной группе пунктов свой `numId` (иначе Word нумерует
+  списки непрерывно по всему документу: «7)», «15)» вместо «1)»); в
+  `numbering.xml` добавляются отсутствующие определения `numId 28/35` для
+  самих стилей.
 - `document_style_validator.py` — детерминированный валидатор (5 контрактов:
   заголовки, уровни, формулы, подписи, список источников). При нарушениях
   статус документа — `completed_with_flags`, не `completed`; отчёт в
-  `outputs/audit-report.md`. Перед валидацией DOCX — прогон валидатора по
-  markdown-источнику (`--md outputs/thesis.md`) для раннего отлова.
+  `outputs/<document_id>/final/audit-report.md`. Перед валидацией DOCX — прогон
+  валидатора по markdown-источнику (`--md outputs/<document_id>/final/<type>.md`)
+  для раннего отлова.
 
-Возвращаешь пользователю путь к `outputs/thesis.docx`. Если pandoc не установлен —
-сообщаешь и предлагаешь установить или скопировать MD вручную.
+Возвращаешь пользователю путь к `outputs/<document_id>/final/<type>.docx`. Если
+pandoc не установлен — сообщаешь и предлагаешь установить или скопировать MD
+вручную.
 
 ### Структурные элементы в markdown
 
@@ -209,7 +218,7 @@ python "E:\akadem-text_agent\academic-writing-suite\scripts\document_style_valid
 - После подписи рисунка `fix_table.py` автоматически вставляет пустой абзац
   (Enter), отделяющий рисунок от следующего текста.
 - Нумерация N.M — в пределах раздела. Разделитель — тире `—` (не дефис `-`).
-- Каждый плейсхолдер логируется в `assets/figures-todo.md`.
+- Каждый плейсхолдер логируется в `outputs/<document_id>/figures-todo.md`.
 - В тексте обязательно ссылайся: «на рисунке 2.1 показано…».
 
 ### Таблицы и подписи
@@ -284,6 +293,216 @@ $v$ — скорость;
 
 $t$ — время.
 ```
+
+## [ARTIFACT-FIRST EXECUTION]
+
+Каждый содержательный субагент сохраняет свой основной результат как файл-артефакт
+**до** возврата финального структурированного ответа. Артефакт — источник истины;
+финальный JSON-ответ субагента — только конверт. Если финальный ответ невалиден,
+но артефакт существует — шаг считается содержательно завершённым; повторяется
+только repair ответа, не содержательная работа.
+
+Карта артефактов:
+
+- research-agent → `evidence/<section_id>.json`
+- calc-agent → `calculations/<section_id>.json`
+- draft-agent → `drafts/<section_id>.md`
+- logic-reviewer-agent → `reviews/<section_id>.logic.json`
+- humanizer-agent → `sections/<section_id>.md`
+- norm-control-agent → `reviews/<section_id>.norm.json`
+- article-polish-agent → `reviews/<document_id>.polish.json`
+
+Каждый запуск создания главы/статьи/ВКР имеет собственный `document_id` и рабочий
+каталог `outputs/<document_id>/` (создаёт `scripts/init_run.py` по вызову
+doc-planner). Никакой артефакт не пишется вне этого каталога.
+
+### Порядок исполнения шага (обязателен, дословно)
+
+```
+1. Вычислить idempotency_key (см. [IDEMPOTENCY AND RETRY POLICY]).
+2. Прочитать state.json и index.json (список артефактов).
+3. Если есть completed-артефакт с тем же key и checksum существует:
+   вернуть artifact_ref; субагента НЕ вызывать.
+4. Если артефакт есть, но финальный ответ был невалиден:
+   status = format_repair_needed; вызвать repair_response_format.
+5. Если артефакта нет: status = running; запустить субагента.
+6. Субагент сохраняет артефакт (scripts/artifact_store.py --save ... --index ...).
+7. Зафиксировать event `artifact_saved` в events.jsonl и статус в state.json.
+8. Только ПОСЛЕ этого валидировать финальный структурированный ответ.
+9. Если формат невалиден — НЕ удалять артефакт, НЕ повторять содержательную работу.
+```
+
+Технические события (started/saved/validation_failed/step_completed) — в
+`events.jsonl` (append-only), не в контекст модели.
+
+### Последовательность в полном документе
+
+`doc-planner → scripts/init_run.py → для каждого подраздела конвейер с state-машиной
+→ article-polish → сборка в final/<type>.md`. Конвейер идёт по state.json:
+`research → (calc) → draft → logic-reviewer → (доработка draft) → humanizer →
+norm-control`, каждый шаг через порядок исполнения выше, без остановки «продолжай».
+
+## [IDEMPOTENCY AND RETRY POLICY]
+
+Стабильный ключ для каждой логической операции:
+
+```
+idempotency_key = SHA-256(
+  document_id | section_id | agent_name | input_artifact_checksums | skill_version | operation_mode
+)
+```
+
+В ключ ЗАПРЕЩЕНО включать timestamp, UUID, номер попытки или текст ошибки. Повтор
+с тем же входом обязан дать тот же key (вычисляет `scripts/state_manager.py key`).
+
+### Статусы шага (§allowed)
+
+| Статус | Смысл | Действие оркестратора |
+|---|---|---|
+| `pending` | ещё не запускался | запуск |
+| `running` | запущен, исход не зафиксирован | поиск артефакта → resume |
+| `completed` | артефакт валиден | не повторять |
+| `completed_with_flags` | готово, есть помеченные проблемы | продолжать с учётом flags |
+| `blocked` | не хватает входных данных | без retry; запросить данные |
+| `format_repair_needed` | артефакт есть, ответ невалиден | только repair |
+| `needs_human_review` | лимит попыток исчерпан | остановиться и отчитаться |
+| `failed_no_artifact` | содержательный результат не создан | один контролируемый retry |
+
+Переходы валидирует `scripts/state_manager.py set ... --from <статус>`.
+
+### Классификация ошибок и реакция
+
+| Категория | Пример | Реакция |
+|---|---|---|
+| `format_error` | invalid JSON, нет `status` | repair на основе артефакта |
+| `artifact_write_error` | не записан файл | проверить ФС; один retry записи |
+| `network_transient` | 429, 5xx, timeout | повторить с тем же key, backoff+jitter |
+| `missing_input` | нет коэффициента/файла | `blocked`, список недостающего, без retry |
+| `validation_error` | размерность/схема | `completed_with_flags` или `format_repair_needed` |
+| `semantic_conflict` | источники дают разные числа | `needs_human_review` |
+| `agent_logic_error` | правило проигнорировано | один targeted retry с замечанием |
+
+### repair_response_format
+
+Не отдельный субагент и не повтор задачи. Тот же субагент, узкий промпт:
+
+```
+На основе уже сохранённого артефакта <artifact_path> верни только валидный объект
+по схеме <schema>. Не исследуй источники, не выполняй расчёт, не переписывай
+текст и не создавай новый артефакт.
+```
+
+Лимиты: один repair на шаг; один полноценный retry, только если артефакт
+отсутствует; после неуспеха — `needs_human_review` (без перезапуска конвейера).
+
+### Backoff
+
+`exponential backoff + jitter` — только для 429, 5xx и временных сетевых ошибок.
+НЕ для невалидного JSON, отсутствующих данных, конфликта источников, ошибки формулы.
+
+## [CONTEXT POLICY]
+
+Принцип «read narrow, not broad»: субагент не получает полный документ и полный
+корпус источников по умолчанию. Передаётся:
+
+1. `manifest.json` (короткий, ≤ `manifest_max_chars`);
+2. локальный пакет своей секции;
+3. максимум две карточки соседних секций (`.section_card_max_chars`), только при связности;
+4. исходник/нормативную выдержку только при явной необходимости.
+
+Межагентная передача использует `artifact_ref + checksum + purpose` (агент сам
+читает ограниченные файлы по путям), плюс короткие критические факты (числа,
+номера ГОСТов) — дословно в промпте (факт-замок). Полный документ субагентам НЕ
+передаётся.
+
+Запреты:
+
+- полный документ НЕ передаётся субагенту по умолчанию;
+- полный humanizer-каталог НЕ копируется в промпт draft-agent;
+- факт-замок/запрещённые конструкции/ГОСТ не дублируются в каждом промпте, если
+  уже лежат в skill агента;
+- LLM не вызывается только ради summary, если карточку собирает скрипт;
+- при локальной проблеме правится конкретный абзац/секция, не глава целиком.
+
+## [CONTEXT BUDGET]
+
+```yaml
+context_budget:
+  manifest_max_chars: 6000
+  section_card_max_chars: 2500
+  neighbor_cards_max: 2
+  evidence_max_chars: 24000      # baseline (V3-C, глава 2): фактический вход draft 26–63К
+  research_input_max_chars: 8000 # baseline: research — самый дорогой этап (42% input); декомпозировать вопросы
+  calculation_max_chars: 10000
+  source_excerpt_max_chars: 4000
+  max_sources_per_section: 6     # baseline: 8 → 6, дедуп по canonical URL обязателен
+  max_tool_output_chars: 6000
+  full_document_in_context: false
+```
+
+Стартовые значения откалиброваны по baseline-прогону главы 2 (`token_ledger.py summary`,
+18 записей, input ≈ 122К ток., output ≈ 74К ток.; 3 format_repair из-за инфраструктуры).
+Дальнейшая калибровка — после обязательного применения `context_pack.py` в конвейере.
+
+## [OUTPUT ARTIFACT CONTRACT]
+
+Конверт финального ответа субагента — только JSON:
+
+```json
+{"status": "completed|completed_with_flags|blocked|...",
+ "artifact_path": "drafts/2.1.md",
+ "checksum": "sha256:...",
+ "idempotency_key": "sha256:...",
+ "flags": []}
+```
+
+Никакого пересказа проделанной работы в ответе. Человекочитаемый текст (раздел,
+отчёт, найденные несоответствия) пользователь получает из файла-артефакта, а не
+из JSON-конверта. Схема артефактов каждого агента — в его SKILL.md.
+
+## [CONTEXT MATRIX]
+
+| Агент | Всегда получает | При необходимости | Никогда по умолчанию |
+|---|---|---|---|
+| doc-planner | manifest, оглавление, бюджет | требования вуза | корпус источников, черновики |
+| research-agent | manifest, вопрос секции, shortlist источников | полные выдержки | полный текст ВКР |
+| calc-agent | manifest, evidence, формула, входные данные | предшествующий расчёт цепочки | обзор, чужие разделы |
+| draft-agent | manifest, evidence, calc, идиолект, ≤2 карточки | соседний финальный раздел | вся глава/логи |
+| logic-reviewer | draft секции, вопрос, evidence IDs | calc artifact | весь документ |
+| humanizer-agent | только текущий текст секции + идиолект | нормативные цитаты | evidence corpus, логи |
+| norm-control-agent | финальный текст, список ссылок/терминов, numbering | source refs | полные PDF |
+| article-polish | карточки всех секций + тексты конфликтных | review artifacts | полный evidence |
+
+## [SCRIPT USAGE — v3]
+
+Детерминированная работа выполняется скриптами (stdlib), которых вызывает
+оркестратор в контрольных точках. Не дублируй их логику «на глаз».
+
+- **init_run.py** — создание рабочего каталога запуска (вызывает doc-planner):
+  `python scripts/init_run.py --document-id <id> --type <chapter|article|thesis|section> --out outputs`
+- **artifact_store.py** — артефакт-первый и реестр index:
+  - checksum: `python scripts/artifact_store.py --sha256 <path>`
+  - запись артефакта (атомарно, обновляет index; **источник — файл, а не stdin**,
+    иначе PowerShell-пайп ломает кириллицу в OEM-кодировке, v1.5.2):
+    `python scripts/artifact_store.py --save <relpath> --file <src_path> --kind <kind> --section-id <id> --agent <agent> --index index.json`
+  - источник файла читается UTF-8/cp866/cp1251 и нормализуется в UTF-8 LF;
+    stdin остаётся для обратной совместимости, но на Windows не используется.
+- **state_manager.py** — идемпотентность и статусы:
+  - ключ: `python scripts/state_manager.py key --document-id <id> --section <s> --agent <a> -i <input-files...> -v <skill_ver> -m <mode>`
+  - статус: `python scripts/state_manager.py set --state state.json --section <s> --step <step> --field status --value <статус> --from <предыдущий>`
+- **token_ledger.py** — журнал токенов; **пишет оркестратор** после каждого
+  task-вызова субагента (субагенты на Windows не вызывают bash — кодовая
+  строка портится; input_chars = длина промпта делегирования, output_chars =
+  длина записанного артефакта, берётся из index.json):
+  `python scripts/token_ledger.py append --ledger token-ledger.jsonl --run-id <id> --section <s> --agent <a> --input-chars <n> --output-chars <m> --status completed`
+  сводные метрики: `python scripts/token_ledger.py summary --ledger token-ledger.jsonl`
+- **context_pack.py** — локальный bounded-пакет для субагента (узкое чтение):
+  `python scripts/context_pack.py --manifest manifest.json --section-id <s> --evidence evidence/<s>.json [--calc calculations/<s>.json] [--card cards/<s2>.json ...] --out pack/<s>.<agent>.txt`
+  Путь к pack-файлу передаёшь субагенту в промпте («прочитай pack/<s>.draft.txt»).
+- **dedupe_sources.py** — дедупликация sources в evidence перед пакетированием:
+  `python scripts/dedupe_sources.py --file evidence/<s>.json`
+- **build_section_card.py** — карточка секции (для article-polish и соседних):
+  `python scripts/build_section_card.py --section-id <s> --title "…" --evidence evidence/<s>.json --section-md sections/<s>.md --manifest manifest.json --out cards/<s>.json`
 
 ## Gotchas
 

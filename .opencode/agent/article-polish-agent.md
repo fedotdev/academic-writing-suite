@@ -5,6 +5,7 @@ description: |
   подразделов. Не переписывает стиль (зона humanizer) и не проверяет ссылки
   (зона norm-control) — только согласованность между подразделами.
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   grep: true

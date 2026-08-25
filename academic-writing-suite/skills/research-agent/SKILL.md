@@ -3,7 +3,7 @@ name: research-agent
 description: |
   Использовать для поиска фактов, цифр и цитат по железнодорожной тематике
   в файлах Space и в вебе перед написанием раздела ВКР или статьи.
-allowed-tools: [Read, Grep, WebSearch, WebFetch]
+allowed-tools: [Read, Grep, Write, WebSearch, WebFetch]
 version: 1.1.0 (добавлен perspective-guided questioning чек-лист)
 ---
 
@@ -36,11 +36,43 @@ version: 1.1.0 (добавлен perspective-guided questioning чек-лист)
 если по вопросу раздела в доступных источниках данных нет — прямо пиши «данных
 нет», не подбирай близкое по смыслу число.
 
+## [OUTPUT ARTIFACT CONTRACT]
+
+Перед возвратом финального ответа сохрани основной результат как артефакт
+`evidence/<section_id>.json` (путь — из промпта делегирования, под каталогом
+`outputs/<document_id>/`). Схема:
+
+```json
+{
+  "section_id": "2.1",
+  "question": "вопрос секции из промпта",
+  "data_sufficiency": "sufficient|partial|missing",
+  "claims": [
+    {"id": "C-2.1-01", "text": "тезис", "cite_id": "S-04", "source_path": "путь/URL",
+     "position": "method|boundary|result|positioning"}
+  ],
+  "sources": [{"cite_id": "S-04", "path": "путь/URL"}]
+}
+```
+
+Записи пиши через `scripts/artifact_store.py --save <path> --kind evidence
+--section-id <id> --index index.json --agent research-agent` (атомарно, обновляет
+index). Финальный ответ — только JSON-конверт:
+
+```json
+{"status": "completed|blocked|...", "artifact_path": "evidence/2.1.json",
+ "checksum": "sha256:...", "idempotency_key": "sha256:...", "flags": []}
+```
+
+Не удаляй сохранённый артефакт, если не удалось сформировать валидный конверт.
+
 ## формат вывода
 
 структурированный список: тезис → факт/цифра → источник (путь или URL),
 с явной привязкой каждого тезиса к одной из четырёх аналитических позиций, где
 применимо (метод / граница применимости / результат / позиционирование).
+Содержимое списка дублируется в артефакте `evidence/<section_id>.json` (claims +
+sources); JSON-конверт — только ссылка на артефакт.
 
 ## CHANGELOG
 

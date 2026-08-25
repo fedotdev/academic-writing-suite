@@ -5,6 +5,7 @@ description: |
   результат → единицы. Только формулы из переданных источников (ГОСТ,
   Инструкция, ПТР) — без собственных моделей и типовых значений.
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   grep: true

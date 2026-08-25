@@ -4,6 +4,7 @@ description: |
   Использовать для поиска фактов, цифр и цитат по железнодорожной тематике
   в файлах Space и в вебе перед написанием раздела ВКР или статьи.
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   grep: true

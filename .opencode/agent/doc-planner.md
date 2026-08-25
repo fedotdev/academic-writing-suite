@@ -7,6 +7,7 @@ description: |
   главу N», «напиши диплом», «напиши статью», «напиши документ», «составь
   план».
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   write: true

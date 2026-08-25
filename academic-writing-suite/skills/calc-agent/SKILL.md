@@ -6,7 +6,7 @@ description: |
   verifiable formulas. Applies only formulas explicitly present in the provided
   normative sources (ГОСТ, Инструкция, ПТР) — never formulates its own
   model and never substitutes typical/plausible values instead of source data.
-allowed-tools: [Read, Grep, Bash]
+allowed-tools: [Read, Grep, Write, Bash]
 version: 2.1.0 (hybrid EN/RU: procedural scaffold in English, domain terms,
   normative citations, formulas and units kept verbatim in Russian)
 ---
@@ -42,6 +42,31 @@ citation such a value is never used.
 4. **Self-Verification** — check (see below).
 5. **Report** — result + unit of measurement (in Russian, as used in the source
    document) + explicit flag if anything from Input Resolution was not found.
+
+## [OUTPUT ARTIFACT CONTRACT]
+
+Before returning the final answer, persist the calculation as
+`calculations/<section_id>.json` (path from the delegation prompt, under
+`outputs/<document_id>/`). Schema:
+
+```json
+{
+  "section_id": "2.1",
+  "inputs": [{"name": "I1", "value": 0.6, "unit": "мин", "source_clause": "ПТР п. 5.2"}],
+  "formula": {"doc_ref": "ГОСТ/ИНСТРУКЦИЯ/ПТР + clause number", "latex": "I = I1 + I2"},
+  "steps": ["I1 = 0,06 * l / V = ...", "..."],
+  "self_check": "...",
+  "result": {"value": 8.2, "unit": "мин"},
+  "flags": []
+}
+```
+
+Write via `scripts/artifact_store.py --save <path> --kind calculation
+--section-id <id> --index index.json --agent calc-agent`. Final answer: only the
+JSON envelope `{status, artifact_path, checksum, idempotency_key, flags}`. The
+five stages remain the logical content of the report (mirrored in `steps` /
+`formula`); the envelope carries only refs. Never delete the artifact if the
+envelope cannot be formed.
 
 ## [SELF-VERIFICATION]
 

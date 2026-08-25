@@ -8,6 +8,7 @@ mode: subagent
 tools:
   read: true
   grep: true
+  write: true
   bash: true
 ---
 
@@ -42,6 +43,13 @@ tools:
 
 Если результат одной формулы подставляется в другую — каждая промежуточная
 стадия отмечается как собственный этап 1–5.
+
+## Артефакт (artifact-first)
+
+Перед ответом сохрани результат в `calculations/<section_id>.json` (путь из промпта):
+`{section_id, inputs:[{name,value,unit,source_clause}], formula:{doc_ref,latex}, steps, self_check, result:{value,unit}, flags}`.
+Пиши через `scripts/artifact_store.py --save <path> --kind calculation --section-id <id> --index index.json --agent calc-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
 
 ## Gotchas
 

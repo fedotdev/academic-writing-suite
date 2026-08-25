@@ -167,6 +167,9 @@ def main(argv: list[str] | None = None) -> int:
             sys.executable, "scripts/staleness_check.py", str(root),
             "--check-deps", "--check-drift", "--record",
         ]),
+        ("v3", [
+            sys.executable, "scripts/test_v3.py", str(root),
+        ]),
         ("evals", [
             sys.executable, "scripts/run_evals.py", str(root), "--rollout", *judge,
         ]),

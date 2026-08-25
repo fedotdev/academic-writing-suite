@@ -6,7 +6,7 @@ description: |
   пользователю. Не переписывает стиль (это зона humanizer-agent) и не
   проверяет ссылки (это зона norm-control-agent) — работает только на
   уровне согласованности между уже написанными подразделами.
-allowed-tools: [Read, Grep]
+allowed-tools: [Read, Grep, Write]
 version: 1.0.0
 ---
 
@@ -33,11 +33,32 @@ version: 1.0.0
    одинаковой конструкцией (проверка «скелета» из инструкций Space,
    применённая на уровне главы, а не одного абзаца).
 
+## [OUTPUT ARTIFACT CONTRACT]
+
+Read-only по отношению к документу: ты не редактируешь текст. Свой отчёт
+сохраняешь как артефакт `reviews/<document_id>.polish.json` (путь из промпта,
+под `outputs/<document_id>/`):
+
+```json
+{
+  "document_id": "vkr-001",
+  "findings": [
+    {"id": "P-1", "section_a": "2.1", "section_b": "2.3",
+     "problem_type": 1, "quote_a": "…", "quote_b": "…"}
+  ]
+}
+```
+
+Пиши через `scripts/artifact_store.py --save <path> --kind review --section-id
+<document_id> --index index.json --agent article-polish-agent`. Финальный ответ —
+только JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
+
 ## [формат вывода]
 
 список найденных несогласованностей с указанием двух точек (раздел + цитата)
-и типом проблемы (1–4). не редактирует текст сам — передаёт список
-оркестратору для точечной правки соответствующим субагентом:
+и типом проблемы (1–4) — дублируется в артефакте `reviews/<document_id>.polish.json`.
+не редактирует текст сам — передаёт список оркестратору для точечной правки
+соответствующим субагентом:
 - дубль тезиса → draft-agent,
 - разнобой термина → norm-control-agent,
 - повтор зачина → humanizer-agent.

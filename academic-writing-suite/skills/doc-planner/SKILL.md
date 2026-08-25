@@ -77,6 +77,25 @@ metadata:
 - Один раздел — один заголовок, без дублирования.
 - Если раздел требует расчётов — явно пометить `(calc)` для calc-agent.
 
+## [OUTPUT ARTIFACT CONTRACT]
+
+В начале run (после подтверждения плана) ты инициализируешь рабочий каталог и
+создаёшь артефакты — до какого-либо делегирования. Ты не пишешь итоговый текст
+(это draft-agent) и не выполняешь расчёты.
+
+```
+1. Сгенерируй document_id (формат: <тип>-<суффикс>-<ГГГГ-ММ-ДД>-<счётчик>).
+2. Вызови scripts/init_run.py --document-id <id> --type <chapter|article|thesis|section>
+   [--language ru] --out outputs
+   -> создаёт outputs/<document_id>/ со всеми каталогами и журналами.
+3. Заполни outputs/<document_id>/manifest.json (outline, target_words, terminology,
+   numbering N.M, has_subpoints) — см. «Выход».
+4. Создай документ-план для пользователя outputs/<document_id>/document-plan.md.
+```
+
+Финальный ответ — только JSON-конверт `{status, artifact_path:"manifest.json",
+checksum, idempotency_key, flags}`.
+
 ## Выход
 
 Оглавление в формате (БЕЗ литеральных номеров — только текст заголовков,
@@ -94,33 +113,33 @@ metadata:
 Список использованных источников
 ```
 
-После подтверждения плана создаёшь **manifest документа** (`outputs/manifest.md`):
+После подтверждения плана создаёшь **manifest документа** в
+`outputs/<document_id>/manifest.json` (короткий, машиночитаемый, ≤ 6000 символов) —
+вместо прежнего `outputs/manifest.md`:
 
-```markdown
-# Manifest: <название документа>
-
-## Метаданные
-- Тип: <ВКР / статья / учебное пособие>
-- Целевой файл: outputs/thesis.md (или outputs/chapter_2.md для одной главы)
-- Общий бюджет: ~120 стр. (для ВКР) / ~15 стр. (для статьи)
-
-## Структура и бюджет
-
-| Раздел | Бюджет (стр.) | Расчёты | has_subpoints | Примечания |
-|--------|---------------|---------|---------------|------------|
-| Введение | 3 | нет | false | Проблема, цель, задачи |
-| 1.1 | 5 | нет | false | Обзор литературы |
-| 1.2 | 8 | да | true | Методика расчёта; пункты: 1.2.1, 1.2.2 |
-| ... | ... | ... | ... | ... |
-| Заключение | 2 | нет | false | Ответы на цели |
-
-## Рисунки и таблицы
-- figures-todo.md: вести лог плейсхолдеров
-- tables-todo.md: вести лог таблиц
-
-## Журнал изменений
-- <дата>: manifest создан
+```json
+{
+  "schema_version": "1.0",
+  "document_id": "vkr-chapter-2-2026-08-20-001",
+  "document_type": "chapter",
+  "language": "ru",
+  "output_path": "outputs/vkr-chapter-2-2026-08-20-001/final/chapter_2.md",
+  "outline": [
+    {"section_id": "2.1", "title": "Точный заголовок из оглавления",
+     "target_words": 900, "status": "in_progress",
+     "requires_calculation": true, "has_subpoints": false,
+     "artifact_refs": {"evidence": "evidence/2.1.json", "calculation": "calculations/2.1.json",
+                       "draft": "drafts/2.1.md", "final_section": "sections/2.1.md"}}
+  ],
+  "terminology": {"пропускная способность": "use_exact_term"},
+  "numbering": {"figures": "N.M", "tables": "N.M"},
+  "context_policy_version": "1.0"
+}
 ```
+
+Для пользователя дополнительно создаётся человекочитаемый `document-plan.md`
+(оглавление без литеральных номеров + бюджет объёма + таблица Раздел/Бюджет/
+Расчёты/has_subpoints/Примечания + журнал изменений).
 
 Бюджет объёма рассчитывается так:
 - Общий бюджет → запросить у пользователя или использовать типовой (ВКР 80–120 стр., статья 15–20 стр., глава 20–30 стр.).

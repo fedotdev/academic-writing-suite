@@ -6,6 +6,7 @@ description: |
   (assets/user-idiolect.md) с иерархией приоритета правил. Триггеры:
   «напиши раздел N.M», «дополни раздел», «черновик раздела».
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   write: true

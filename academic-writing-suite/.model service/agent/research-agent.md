@@ -8,6 +8,7 @@ tools:
   read: true
   grep: true
   glob: true
+  write: true
   websearch: true
   webfetch: true
 ---
@@ -35,3 +36,10 @@ tools:
 
 Структурированный список: тезис → факт/цифра → источник, с привязкой
 к одной из четырёх позиций (метод / граница / результат / позиционирование).
+
+## Артефакт (artifact-first)
+
+Перед ответом сохрани результат в `evidence/<section_id>.json` (путь из промпта):
+`{section_id, question, data_sufficiency, claims:[{id,text,cite_id,source_path,position}], sources:[{cite_id,path}]}`.
+Пиши через `scripts/artifact_store.py --save <path> --kind evidence --section-id <id> --index index.json --agent research-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.

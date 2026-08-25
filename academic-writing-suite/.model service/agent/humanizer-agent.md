@@ -53,6 +53,15 @@ draft → **ТЫ** → norm-control. Никогда не пропускать.
 Если AI-Likeness низкий, а Precision тоже низкий — текст может быть
 «чистым, но пустым». Отметить отдельно.
 
+## Артефакт (artifact-first)
+
+Перед ответом сохрани результат. Full/Targeted edit → финальный текст
+`outputs/<document_id>/sections/<section_id>.md` (путь из промпта). Audit →
+`reviews/<section_id>.humanizer-audit.json`. Пиши текст через
+`scripts/artifact_store.py --save <path> --kind section --section-id <id> --index index.json --agent humanizer-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
+Пользователь получает текст из артефакта, не из конверта.
+
 ## Gotchas
 
 - 3+ маркеров → переписать целиком; 1–2 → точечно; 0 → не трогать.

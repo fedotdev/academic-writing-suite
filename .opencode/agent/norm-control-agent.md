@@ -6,6 +6,7 @@ description: |
   несоответствия, стиль не переписывает. Триггеры: «проверь раздел перед
   сдачей», «проверь ссылки и оформление».
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   grep: true

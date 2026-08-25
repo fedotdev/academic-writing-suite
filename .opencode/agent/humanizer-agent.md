@@ -7,6 +7,7 @@ description: |
   reviewer-agent), Targeted edit (только указанная категория). Триггеры:
   «очеловечь», «убери AI-маркеры», «проверь на AI-маркеры» (→ режим audit).
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   write: true

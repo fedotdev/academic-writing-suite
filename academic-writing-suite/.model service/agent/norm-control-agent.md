@@ -10,6 +10,7 @@ tools:
   read: true
   grep: true
   glob: true
+  write: true
 ---
 
 # norm-control-agent
@@ -41,6 +42,14 @@ tools:
 
 - `references/GOST_7-32-2017.md` — структура, рисунки, таблицы, формулы.
 - `references/GOST_7-0-100-2018.md` — библиографические записи.
+
+## Артефакт (artifact-first)
+
+Read-only по стилю, но свой отчёт сохраняешь в `reviews/<section_id>.norm.json`
+(путь из промпта): `{section_id, verdict:"ok|findings", findings:[{id,locus,check,problem}]}`.
+Пиши через `scripts/artifact_store.py --save <path> --kind review --section-id <id> --index index.json --agent norm-control-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
+Нет замечаний → `verdict:"ok"`, пустой findings.
 
 ## Gotchas
 

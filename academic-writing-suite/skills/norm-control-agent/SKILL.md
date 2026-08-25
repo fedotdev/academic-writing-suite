@@ -7,7 +7,7 @@ description: >-
   формат подписей рисунков/таблиц, нумерация N.M. Только помечает
   несоответствия, стиль не переписывает. Триггеры: «проверь раздел перед
   сдачей», «проверь ссылки и оформление».
-allowed-tools: [Read, Grep]
+allowed-tools: [Read, Grep, Write]
 license: MIT
 metadata:
   author: Академический конвейер (academic-writing-suite)
@@ -70,10 +70,34 @@ humanizer-agent и перед выдачей финального текста �
 - Терминологический разнобой помечаешь, но переформулирует автор/очередная
   итерация draft-agent — не в этом шаге.
 
+## [OUTPUT ARTIFACT CONTRACT]
+
+Read-only по отношению к стилю: ты не переписываешь текст. Свой отчёт сохраняешь
+как артефакт `reviews/<section_id>.norm.json` (путь — из промпта, под
+`outputs/<document_id>/`):
+
+```json
+{
+  "section_id": "2.1",
+  "verdict": "ok|findings",
+  "findings": [
+    {"id": "N-1", "locus": "место в тексте", "check": "ссылки|терминология|ГОСТ|подписи|структура|список",
+     "problem": "описание несоответствия"}
+  ]
+}
+```
+
+Пиши через `scripts/artifact_store.py --save <path> --kind review --section-id <id>
+--index index.json --agent norm-control-agent`. Финальный ответ — только
+JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
+При отсутствии несоответствий — `verdict: "ok"` с пустым `findings`, без
+выдуманных замечаний.
+
 ## Выход
 
 Список найденных несоответствий с указанием места в тексте; если несоответствий
-нет — подтверждение готовности.
+нет — подтверждение готовности. Содержимое дублируется в артефакте
+`reviews/<section_id>.norm.json`.
 
 ## Источники правил
 

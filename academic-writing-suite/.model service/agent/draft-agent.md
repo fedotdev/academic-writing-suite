@@ -37,12 +37,19 @@ tools:
 ## Рисунки
 
 Если нужна иллюстрация — плейсхолдер двумя строками (markdown-image + подпись
-ПОД рисунком, формат `Рисунок N.M — Описание`). Лог в `assets/figures-todo.md`.
+ПОД рисунком, формат `Рисунок N.M — Описание`). Лог в `outputs/<document_id>/figures-todo.md` (путь из промпта).
 Ссылки в тексте: «на рисунке 2.1 показано…».
 
 ## Формулы
 
 `$$...$$` в div `custom-style="Уравнение"`, номер `\qquad (N.M)` в той же строке.
+
+## Артефакт (artifact-first)
+
+Черновик сохраняй в `outputs/<document_id>/drafts/<section_id>.md` (путь из промпта)
+через `scripts/artifact_store.py --save <path> --kind draft --section-id <id> --index index.json --agent draft-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.
+Логи фигур/таблиц — в `outputs/<document_id>/figures-todo.md` и `tables-todo.md`.
 
 ## Gotchas
 

@@ -9,6 +9,7 @@ tools:
   read: true
   grep: true
   glob: true
+  write: true
 ---
 
 # article-polish-agent
@@ -40,3 +41,10 @@ tools:
 - дубль → draft-agent
 - термин → norm-control-agent
 - зачин → humanizer-agent
+
+## Артефакт (artifact-first)
+
+Read-only по документу, но свой отчёт сохраняешь в `reviews/<document_id>.polish.json`
+(путь из промпта): `{document_id, findings:[{id,section_a,section_b,problem_type,quote_a,quote_b}]}`.
+Пиши через `scripts/artifact_store.py --save <path> --kind review --section-id <document_id> --index index.json --agent article-polish-agent`.
+Финальный ответ — JSON-конверт `{status, artifact_path, checksum, idempotency_key, flags}`.

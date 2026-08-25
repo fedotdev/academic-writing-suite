@@ -306,10 +306,23 @@ academic-writing-suite/
 python3 scripts/run_evals.py --validate        # Проверка спецификации
 python3 scripts/run_evals.py                   # Command-чеки по golden-бейзлайну
 python3 scripts/run_evals.py --rollout --judge # Judge-чеки с канарейкой
+python3 scripts/test_v3.py                     # v3: надёжность + контракты артефактов
 python3 scripts/evolve.py                      # Staleness + evals одним запуском
 ```
 
 Текущее состояние: **36/36 command-чеков зелёные** (9 чеков × 4 val-кейса).
+
+## v3: artifact-first и контекстная экономия
+
+С версии 1.4 субагенты следуют artifact-first: сохраняют результат в
+`outputs/<document_id>/` (evidence/calculations/drafts/sections/reviews) **до**
+финального JSON-конверта `{status, artifact_path, checksum, idempotency_key,
+flags}`. Повтор шага с тем же idempotency key не пересоздаёт артефакт; при
+формат-ошибке ответа артефакт восстанавливается без повторной содержательной
+работы. Каждый запуск имеет собственный `document_id` и каталог `outputs/<id>/`
+(`scripts/init_run.py`). Контекст субагентам передаётся узко — через bounded-pack
+`scripts/context_pack.py` (дедуп + бюджеты), а не полный документ; расход
+фиксируется `scripts/token_ledger.py`. Проверка: `python3 scripts/test_v3.py`.
 
 ## Калибровка идиолекта
 

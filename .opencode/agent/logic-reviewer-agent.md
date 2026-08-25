@@ -5,6 +5,7 @@ description: |
   разрывы рассуждения, голые утверждения, границы применимости,
   согласованность чисел. Read-only — возвращает находки, не пишет текст.
 mode: subagent
+model: omniroute/auto
 tools:
   read: true
   grep: true
